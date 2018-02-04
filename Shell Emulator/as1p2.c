@@ -259,11 +259,9 @@ int waitforjob(char *jobnc)
         if(trv->number == jobn){
 	    printf("Bringing jobno %d and pid %d to foreground", jobn, trv->pid);
 	    waitpid(trv->pid, NULL, WUNTRACED);
-            return 0; //check if it works
+        return 0; //check if it works
         }
-        else{
-           trv = trv->next;
-        }
+        trv = trv->next;
     }
     printf("Job number %d does not exist",jobn);
          //if correspoding job is found 
