@@ -89,7 +89,7 @@ void addToJobList(char *args[])
         current_job->next = job;
 
         //make job to be current_job
-        job = current_job;
+         current_job = job;
         
         //set the next of job to be NULL
         job->next = NULL;
@@ -131,18 +131,21 @@ void refreshJobList()
 		//if waitpid returns a number that is not 0 or not -1, then it means the 
 		//process has changed status, and so is done
 		//remove the job from the linked list
-			if (current_job = head_job){//if the job to remove is the 1st in the list
+			if (current_job == head_job){//if the job to remove is the 1st in the list
 				current_job = current_job->next; //update current job
-				head_job = current_job; //remove the job by updating the head to point to the next job
+				free(head_job);
+                head_job = current_job; //remove the job by updating the head to point to the next job
                 prev_job = current_job;
             }
 			else if (current_job->next == NULL){//if the job to remove is the last of the list
+                free(current_job);
                 current_job = prev_job;
             	prev_job->next = NULL; //update the previous job to point to null instead of the job to delete	
 			}
 			else { //any other job
 				current_job = current_job->next; //update current job pointer
-				prev_job->next = current_job; //make previous job point to next job instead of the job to delete
+				free(prev_job->next);
+                prev_job->next = current_job; //make previous job point to next job instead of the job to delete
 			}       
         }
     }
