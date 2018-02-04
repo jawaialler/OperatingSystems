@@ -194,21 +194,26 @@ void waitForEmptyLL(int nice, int bg)
  {
      int cnt =0;
 	 char buffer[2000];
-	 int bytes_read;
-	 int fd = open(filename, O_RDONLY);   // opening file
+	 int bytes_read; 
+	FILE *file;
+	file = fopen(filename, "r");
+ // opening file
      //if flag is l 
      //count the number of lines in the file 
      //set it in cnt
 
      if (flag == NULL){
-        printf(stderr, "Unrecognized flag\n");
+        fprintf(stderr,"Unrecognized flag\n");
         return 0;     
      }
-      if ((FILE * file = fopen(filename, "r") == NULL ) {
-        fclose(file);
-        printf(stderr, "The file does not exist\n");
+      if (file == NULL ) {
+        fprintf(stderr, "The file does not exist\n");
         return 0;
     }
+
+fclose(file);
+
+int fd = open(filename, O_RDONLY); 
 
 	 if (!strcmp("-l", flag)) {
 		 while (bytes_read = read(fd, buffer, sizeof(buffer))) {
@@ -239,7 +244,7 @@ void waitForEmptyLL(int nice, int bg)
 
 	 }
      else{
-        printf(stderr, "Unrecognized flag\n");
+        fprintf(stderr, "Unrecognized flag\n");
         return 0;
      }
      close(fd);
