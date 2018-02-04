@@ -137,7 +137,7 @@ void refreshJobList()
                 prev_job = current_job;
             }
 			else if (current_job->next == NULL){//if the job to remove is the last of the list
-                current_job = prev_job
+                current_job = prev_job;
             	prev_job->next = NULL; //update the previous job to point to null instead of the job to delete	
 			}
 			else { //any other job
