@@ -423,6 +423,11 @@ int main(void)
             //hint : samosas are nice but often there 
             //is a long waiting line for it.
 
+            if (nice ==1){
+                waitForEmptyLL(nice, bg);
+            }
+
+
             //create a child
             pid = fork();
 
@@ -496,7 +501,7 @@ int main(void)
                 else
                 {
                     //simply execute the command.
-                    execvp(args[0], args);
+                    execvp(args[0], args) < 0;
                 }
             }
         }
