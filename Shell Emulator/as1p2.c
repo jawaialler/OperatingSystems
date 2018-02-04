@@ -200,6 +200,16 @@ void waitForEmptyLL(int nice, int bg)
      //count the number of lines in the file 
      //set it in cnt
 
+     if (flag == NULL){
+        printf(stderr, "Unrecognized flag\n");
+        return 0;     
+     }
+      if ((FILE * file = fopen(filename, "r") == NULL ) {
+        fclose(file);
+        printf(stderr, "The file does not exist\n");
+        return 0;
+    }
+
 	 if (!strcmp("-l", flag)) {
 		 while (bytes_read = read(fd, buffer, sizeof(buffer))) {
 			 int i;
@@ -222,12 +232,17 @@ void waitForEmptyLL(int nice, int bg)
 					 cnt++;
 				 }
 			 }
+             if (buffer[bytes_read-1] == '.'){
+                 cnt++;
+             }
 		 }
 
-
-
 	 }
-
+     else{
+        printf(stderr, "Unrecognized flag\n");
+        return 0;
+     }
+     close(fd);
      return cnt;
  }
 
@@ -408,7 +423,7 @@ int main(void)
         {
             //call the word count function	
             int counted = wordCount(args[2],args[1]);
-		printf("%d\n", counted);
+		    printf("%d\n", counted);
         }
         else
         {
