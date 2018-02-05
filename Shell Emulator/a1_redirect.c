@@ -18,22 +18,22 @@ int main(){
 
     printf("First : Print to stdout \n");
 
-    //open file 1st
-   int fileoutputfd = open("redirectout.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+    //open file to write to
+    int fd = open("redirectout.txt", O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
       
     //copy address of the old location, aka console 
-    int oldoutputfd = dup(1);
+    int oldfd = dup(1);
  
     //change where output goes
-    dup2(fileoutputfd, 1);
+    dup2(fd, 1);
 
     printf("Second : Print to redirectout.txt \n");
 
-    //close file, renders the fd available again
-    close(fileoutputfd);
+    //close file, renders the location available again
+    close(fd);
 
     //change where output goes again
-    dup2(oldoutputfd, 1);
+    dup2(oldfd, 1);
 
     printf("Third : Print to stdout \n");
 
