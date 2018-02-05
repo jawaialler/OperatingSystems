@@ -33,6 +33,9 @@ pid_t process_id;
 //flag variable to check if redirection of output is required
 int isred = 0;
 
+//global job number variable to ensure no two have the same id
+int job_number = 1;
+
 //structure of a single node
 //donot modify this structure
 struct node
@@ -53,7 +56,7 @@ void addToJobList(char *args[])
     if (head_job == NULL)
     {
         //init the job number with 1
-        job->number = 1;
+        job->number = job_number;
         //set its pid from the global variable process_id
         job->pid = process_id;
         //cmd can be set to arg[0]
@@ -80,7 +83,8 @@ void addToJobList(char *args[])
 		  }
 
         //init all values of the job like above num,pid,cmd.spawn
-        job->number = current_job->number+1; //new job gets the next available number
+	job_number++;
+        job->number = job_number; //new job gets the next available number
         job->pid = process_id; //assign id from global pid_t
         job->cmd = args[0];
         job->spawn = (unsigned int)time(NULL);
@@ -182,6 +186,7 @@ void waitForEmptyLL(int nice, int bg)
     {
         while (head_job != NULL)
         {
+	    printf("checking linked list/n");
             sleep(1);
             refreshJobList();
         }
@@ -274,6 +279,11 @@ int waitforjob(char *jobnc)
     trv = head_job;
     //traverse through linked list and find the corresponding job
     //hint : traversal done in other functions too
+<<<<<<< HEAD
+=======
+     printf("SAWGBOII");
+
+>>>>>>> de11339f8a53da321377ef2460c1eaada85825ac
     while(trv!=NULL){
         if(trv->number == jobn){
 	    printf("Bringing jobno %d and pid %d to foreground", jobn, trv->pid);
@@ -520,7 +530,7 @@ int main(void)
                 else
                 {
                     //simply execute the command.
-                    execvp(args[0], args) < 0;
+                    execvp(args[0], args);
                 }
             }
         }
