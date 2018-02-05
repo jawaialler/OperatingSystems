@@ -275,7 +275,6 @@ int waitforjob(char *jobnc)
 
     //traverse through linked list and find the corresponding job
     while(trv!=NULL){
-        printf("hi");
         if(trv->number == jobn){ //if job with the specified number is found
 	        printf("Bringing jobno %d and pid %d to foreground", jobn, trv->pid);
 	        waitpid(trv->pid, NULL, WUNTRACED); //wait for that process to finish
@@ -410,11 +409,11 @@ int main(void)
         {
             //use getcwd and print the current working directory
 			char directory[200];
-			if (getcwd(directory, sizeof(directory)) == NULL) {
-				printf("error");
+			if (getcwd(directory, sizeof(directory)) == NULL) { //if the string is empty
+				printf("error"); //handle error
 			}
 			else {
-				printf("%s\n", directory);
+				printf("%s\n", directory); //print the directory
 			}
         }
         else if(!strcmp("wc",args[0]))
@@ -425,21 +424,10 @@ int main(void)
         }
         else
         {
-            //Now handle the executable commands here 
-            /* the steps can be..:
-            (1) fork a child process using fork()
-            (2) the child process will invoke execvp()
-            (3) if background is not specified, the parent will wait,
-                otherwise parent starts the next command... */
-
-
-            //hint : samosas are nice but often there 
-            //is a long waiting line for it.
-
+            //If the command has nice, wait for all previous jobs to finish before executing
             if (nice ==1){
                 waitForEmptyLL(nice, bg);
             }
-
 
             //create a child
             pid = fork();
@@ -448,20 +436,16 @@ int main(void)
             if (pid > 0)
             {
                 //we are inside parent
-                //printf("inside the parent\n");
                 if (bg == 0)
                 {
                     //FOREGROUND
-                    // waitpid with proper argument required
-                    waitpid(pid, NULL, WUNTRACED);
+                    waitpid(pid, NULL, WUNTRACED); //run the command, everything holds until it is finished
                 }
                 else
                 {
                     //BACKGROUND
                     process_id = pid;
-                    addToJobList(args);
-                    // waitpid with proper argument required
-                   // waitpid(pid, NULL, WNOHANG);
+                    addToJobList(args); //add to the job list
                 }
             }
             else
@@ -472,22 +456,16 @@ int main(void)
                 performAugmentedWait();
 
                 //check for redirection
-                //now you know what does args store
-                //check if args has ">"
-                //if yes set isred to 1
-                //else set isred to 0
-
-                //if (*args[1] == '>'){
-		int index =0;
-		while(args[index]!=NULL){
-			if (!strcmp(">", args[index])){
-                    	isred = 1;
-			break;
+		        int index =0; //index to know where > is
+		        while(args[index]!=NULL){ //until input sting is done
+		        	if (!strcmp(">", args[index])){ 
+                    	isred = 1; //set redirection flag
+		            	break;
                		}
-			else{
-			isred = 0;
-			}
-		index++;
+			        else{
+		        	    isred = 0; //if we have gone through the whole string and havent found >, no redirect
+		        	}
+	        	    index++; //increment
                 }
 
 
@@ -495,17 +473,15 @@ int main(void)
                  if (isred == 1)
                 {
                     //open file and change output from stdout to that  
-                    //make sure you use all the read write exec authorisation flags
-                    //while you use open (man 2 open) to open file
-                    int fileoutputfd = open(args[index+1], O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
-                   // int oldoutputfd = dup(1);
-                    dup2(fileoutputfd, 1);
+                    int fd1 = open(args[index+1], O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR);
+                    //set the file desc to output
+                    dup2(fd1, 1);
 
                     //set ">" and redirected filename to NULL
                     args[index] = NULL;
                     args[index + 1] = NULL;
 
-                    //run your command
+                    //run command
                     execvp(args[0], args);
 
                     //restore to stdout
