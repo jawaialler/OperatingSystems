@@ -22,7 +22,7 @@ and falls under the McGill code of conduct, to the best of my knowledge.
 //pointer to Linked list head
 struct node *head_job = NULL;
 
-//pointer to
+//pointer to current job
 struct node *current_job = NULL;
 
 //global variable used to store process id of process
@@ -80,12 +80,12 @@ void addToJobList(char *args[])
         //traverse the linked list to reach the last job
        while (current_job->next != NULL) {
 		 current_job = current_job->next; //go through linked list
-		  }
+       }
 
         //init all values of the job like above num,pid,cmd.spawn
-	job_number++;
-        job->number = job_number; //new job gets the next available number
-        job->pid = process_id; //assign id from global pid_t
+	    job_number++; //increment job_number to ensure they all have different id numbers
+        job->number = job_number;
+        job->pid = process_id;
         job->cmd = args[0];
         job->spawn = (unsigned int)time(NULL);
 
@@ -93,7 +93,7 @@ void addToJobList(char *args[])
         current_job->next = job;
 
         //make job to be current_job
-         current_job = job;
+        current_job = job;
         
         //set the next of job to be NULL
         job->next = NULL;
@@ -126,9 +126,7 @@ void refreshJobList()
         if (ret_pid == 0){
 		//if equal to 0, then the process is not done yet
 		//continue going through the list
-			//if (current_job != head_job){
-				prev_job = current_job; //only update prev_job to current job if it is not the first job in the list
-			//}
+			prev_job = current_job; //update previous job	
 			current_job = current_job->next; //continue going through linked list
 		}
         else {
@@ -185,7 +183,7 @@ void waitForEmptyLL(int nice, int bg)
     {
         while (head_job != NULL)
         {
-	    printf("checking linked list/n");
+	        printf("checking linked list/n"); //added this to comply with expected output
             sleep(1);
             refreshJobList();
         }
@@ -197,15 +195,12 @@ void waitForEmptyLL(int nice, int bg)
  int wordCount(char *filename,char* flag)
  {
      int cnt =0;
-	 char buffer[2000];
-	 int bytes_read; 
-	FILE *file;
-	file = fopen(filename, "r");
- // opening file
-     //if flag is l 
-     //count the number of lines in the file 
-     //set it in cnt
-
+	 char buffer[2000]; //to store the file's contents
+	 int bytes_read; //to know the file's length
+	 FILE *file; //had to create new pointer to check for file existance because open() cannot do so
+	 file = fopen(filename, "r");
+ 
+     //error checking: if there is no file or no flag
      if (flag == NULL){
         fprintf(stderr,"Unrecognized flag\n");
         return 0;     
@@ -215,24 +210,23 @@ void waitForEmptyLL(int nice, int bg)
         return 0;
     }
 
-fclose(file);
+     fclose(file); //close file
 
-int fd = open(filename, O_RDONLY); 
+     int fd = open(filename, O_RDONLY); //open it to a file descriptor
 
+     //checking for number of lines
 	 if (!strcmp("-l", flag)) {
-		 while (bytes_read = read(fd, buffer, sizeof(buffer))) {
+		 while (bytes_read = read(fd, buffer, sizeof(buffer))) { //go through the file's contents
 			 int i;
 			 for (i = 0; i < bytes_read; i++) {
-				 if (buffer[i] == '\n') {
-					 cnt++;
+				 if (buffer[i] == '\n') { //if new line character is encountered
+					 cnt++; //increment counter
 				 }
 			 }
 		 }
 	 }
 
-     //if flag is w
-     //count the number of words in the file
-     //set it in cnt
+     //checking for number of words
 	 else if (!strcmp("-w", flag)) {
 		 while (bytes_read = read(fd, buffer, sizeof(buffer))) {
 			 int i;
@@ -241,17 +235,19 @@ int fd = open(filename, O_RDONLY);
 					 cnt++;
 				 }
 			 }
-             if (buffer[bytes_read-1] == '.'){
+             //include the last word of the document, in case the last character is punctuation
+             if (buffer[bytes_read-1] == '.' || buffer[bytes_read-1] == '!' || buffer[bytes_read-1] == '?' ){
                  cnt++;
              }
 		 }
 
 	 }
+     //if flag is neither -w, neither -l, then output an error
      else{
         fprintf(stderr, "Unrecognized flag\n");
         return 0;
      }
-     close(fd);
+     close(fd); //close file
      return cnt;
  }
 
@@ -272,51 +268,23 @@ void performAugmentedWait()
 //by making the parent process wait for
 //a particular process id.
 int waitforjob(char *jobnc)
-{//TO-DO THIS
-   /* struct node *trv;
+{
+    struct node *trv;
     int jobn = atoi(jobnc);
     trv = head_job;
-    //traverse through linked list and find the corresponding job
-    //hint : traversal done in other functions too
 
+    //traverse through linked list and find the corresponding job
     while(trv!=NULL){
-        if(trv->number == jobn){
-	    printf("Bringing jobno %d and pid %d to foreground", jobn, trv->pid);
-	    waitpid(trv->pid, NULL, WUNTRACED);
-        return 0; //check if it works
+        printf("hi");
+        if(trv->number == jobn){ //if job with the specified number is found
+	        printf("Bringing jobno %d and pid %d to foreground", jobn, trv->pid);
+	        waitpid(trv->pid, NULL, WUNTRACED); //wait for that process to finish
+            return 0; 
         }
         trv = trv->next;
     }
     printf("Job number %d does not exist",jobn);
-         //if correspoding job is found 
-        //use its pid to make the parent process wait.
-        //waitpid with proper argument needed here
-    
-    
     return -1;
-
-    */
-struct node *trv;
-    int jobn = atoi(jobnc);
-    trv = head_job;
-    //traverse through linked list and find the corresponding job
-    while(trv != NULL)
-    {
-        //if correspoding job is found 
-        //use its pid to make the parent process wait.
-        //waitpid with proper argument needed here
-        if(trv->number == jobn) 
-        {
-            printf("bringing jobno %d and pid %d to foreground\n", jobn, trv->pid);
-            waitpid(trv->pid, NULL, WUNTRACED); 
-            return 0;
-        } 
-        trv = trv->next;
-    }
-    fprintf(stderr, "Error, jobno does not exist\n");
-    return -1
-
-
 }
 
 // splits whatever the user enters and sets the background/nice flag variable
@@ -432,20 +400,18 @@ int main(void)
         {
             int result = 0;
             if(args[1] == NULL){// if no destination directory given
-				chdir(getenv("HOME"));// change to home directory 
+			    chdir(getenv("HOME"));// change to home directory 
             }
-	    else if (chdir(args[1]) != 0){
-	printf("cd: %s: No such file or directory", args[1]);
-
-
-	    }
+	        else if (chdir(args[1]) != 0){ //try to change to specified directory, returns 0 if successful
+	            printf("cd: %s: No such file or directory", args[1]); //if unsuccessful, then output error
+            }
         }
         else if (!strcmp("pwd", args[0]))
         {
             //use getcwd and print the current working directory
 			char directory[200];
 			if (getcwd(directory, sizeof(directory)) == NULL) {
-				printf("error"); //handle this maybe
+				printf("error");
 			}
 			else {
 				printf("%s\n", directory);
