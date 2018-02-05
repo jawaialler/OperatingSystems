@@ -274,7 +274,6 @@ int waitforjob(char *jobnc)
     trv = head_job;
     //traverse through linked list and find the corresponding job
     //hint : traversal done in other functions too
-    
     while(trv!=NULL){
         if(trv->number == jobn){
 	    printf("Bringing jobno %d and pid %d to foreground", jobn, trv->pid);
