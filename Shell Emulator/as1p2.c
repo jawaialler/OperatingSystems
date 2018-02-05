@@ -135,8 +135,7 @@ void refreshJobList()
 		//if waitpid returns a number that is not 0 or not -1, then it means the 
 		//process has changed status, and so is done
 		//remove the job from the linked list
-		
-        /*	if (current_job == head_job){//if the job to remove is the 1st in the list
+			if (current_job == head_job){//if the job to remove is the 1st in the list
 				current_job = current_job->next; //update current job
 				free(head_job);
                 head_job = current_job; //remove the job by updating the head to point to the next job
@@ -153,30 +152,6 @@ void refreshJobList()
                 prev_job->next = current_job; //make previous job point to next job instead of the job to delete
 			}       
         }
-        */
-                if(current_job->next == NULL) //then this node is at the very end
-                {
-                    free(current_job);        //deallocate memory
-                    current_job = NULL;       //set to NULL to be save before reassigning it again
-                    current_job = prev_job;
-                    current_job->next = NULL; //now the previous job is the at the end of the list
-                } 
-                else if(current_job == head_job && (current_job->next != NULL)) //remove the job from the front of the list
-                {
-                    free(current_job);            //deallocate the memory
-                    head_job = head_job->next;    //the second job in line becomes the new head_job
-                    prev_job = head_job;          //now everything points to the new head_job
-                    current_job = head_job; 
-                }
-                else if(current_job->next != NULL) //if it reaches this point, then the job is somewhere in between the head and the tail
-                {
-                    current_job = current_job->next;
-                    free(prev_job->next);           //deallocate what current_job was previosuly pointing to
-                    prev_job->next = NULL;
-                    prev_job->next = current_job;   //and then connect previos job to the new current job
-                }
-            }
-
     }
     return;
 }
@@ -185,7 +160,6 @@ void refreshJobList()
 void listAllJobs()
 {
     struct node *current_job;
-    int ret_pid;
 
     //refresh the linked list
     refreshJobList();
@@ -299,7 +273,7 @@ void performAugmentedWait()
 //a particular process id.
 int waitforjob(char *jobnc)
 {//TO-DO THIS
-    struct node *trv;
+   /* struct node *trv;
     int jobn = atoi(jobnc);
     trv = head_job;
     //traverse through linked list and find the corresponding job
@@ -320,6 +294,29 @@ int waitforjob(char *jobnc)
     
     
     return -1;
+
+    */
+struct node *trv;
+    int jobn = atoi(jobnc);
+    trv = head_job;
+    //traverse through linked list and find the corresponding job
+    while(trv != NULL)
+    {
+        //if correspoding job is found 
+        //use its pid to make the parent process wait.
+        //waitpid with proper argument needed here
+        if(trv->number == jobn) 
+        {
+            printf("bringing jobno %d and pid %d to foreground\n", jobn, trv->pid);
+            waitpid(trv->pid, NULL, WUNTRACED); 
+            return 0;
+        } 
+        trv = trv->next;
+    }
+    fprintf(stderr, "Error, jobno does not exist\n");
+    return -1
+
+
 }
 
 // splits whatever the user enters and sets the background/nice flag variable
