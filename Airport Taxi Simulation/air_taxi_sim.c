@@ -20,6 +20,9 @@
 #include <semaphore.h>
 
 int BUFFER_SIZE = 100; //size of queue
+int ONE_ID_POS = 1000000; //passenger id follows 1ZZZYYY
+int Z_ID_POS = 1000;
+int Y_ID_POS = 1;
 pthread_mutex_t mutex; //shared semaphore
 sem_t fillCount; //producer semaphore
 sem_t emptyCount; //consumer semapore
@@ -111,9 +114,26 @@ void *FnAirplane(void* cl_id){
 //producer: either go to sleep or discard data if the buffer is full.
 // The next time the producer puts data into the buffer, it wakes up the sleeping consumer. 
 //The solution can be reached by means of inter-process communication, typically using semaphores.
-    
-   
+    while(1){
+        srand(time(NULL));
+        int num_passengersDropped = rand()%6 + 5; //generate the number of passengers going to taxi platform (5-10)
+        printf("Airplaine %d arrives with %d passengers\n",cl_id, num_passengersDropped);
 
+//put some mutex shit here
+        if(isFull(queue)){
+            printf("Platform is full: Rest of passengers of plane 2 take the bus\n",cl_id);
+        }
+        else {
+            for(int p = 0; p < num_passengersDropped; p++){
+                pthread_mutex_lock(&mutex);
+                int passenger_id = (1*ONE_ID_POS) + (cl_id*Z_ID_POS) + (p*Y_ID_POS);
+                printf("Passenger %d of airplane %d arrives to platform\n",passenger_id, cl_id);
+                enqueue(queue, passenger_id);
+                pthread_mutex_unlock(&mutex);
+            }   
+        }
+    sleep(1); //sleep thread for 1 second = 1 hour
+    }
 }
 
 /* Consumer Function: simulates a taxi that takes n time to take a passenger home and come back to the airport */
@@ -122,14 +142,29 @@ void *FnTaxi(void* pr_id){
   //TO-DO: implement this
 // consumer is consuming the data (i.e., removing it from the buffer), one piece at a time
 
-
 //The problem is to make sure that the producer won't try to add data into the buffer if it's full and that the consumer won't try to remove data from an empty buffer
 // next time the consumer removes an item from the buffer, it notifies the producer, who starts to fill the buffer again. 
+    printf("Taxi driver %d arrives\n",pr_id);
 
+    if(isEmpty(queue)){
+        printf("Taxi driver %d waits for passengers to enter the platform\n",pr_id);
+    }
+    else{
+        pthread_mutex_lock(&mutex);
+        int passenger_boarding = dequeue(queue);
+        printf("Taxi driver %d picked up client %d from the platform\n",pr_id, passenger_boarding);
+        pthread_mutex_unlock(&mutex);
+    }
+    
+    srand(time(NULL));
+    int tripTime = (rand()%21 + 10)/60; //generate the time the taxi takes to drop someone (10min-30min = 0.167 hours to 0.5 hours = 0.167 seconds to 0.5 seconds )
+    usleep(tripTime);
 }
 
-int main(int argc, char *argv[])
-{
+
+
+
+int main(int argc, char *argv[]){
 
   int num_airplanes;
   int num_taxis;
@@ -158,21 +193,18 @@ int main(int argc, char *argv[])
   int *airplane_ids[num_airplanes];
   int *taxi_ids[num_taxis]; 
   
-  
   //create threads for airplanes
 
    for(int i=0; i< num_airplanes; i++){
-       // start the thread
+       // start a new thread for every airplane required
     pthread_create(&airplaneThread[i], NULL, FnAirplane,&i);
-
+    printf("Creating airplane thread %d\n",i);
    }
 
   //create threads for taxis
-
     for(int j=0; j< num_taxis; j++){
-        // start the thread
+        // start a new thread for every taxi required
      pthread_create(&taxiThread[j], NULL, FnTaxi,&j);
-
     }
   
   pthread_exit(NULL);
