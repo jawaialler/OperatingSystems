@@ -114,20 +114,22 @@ void *FnAirplane(void* cl_id){
 //producer: either go to sleep or discard data if the buffer is full.
 // The next time the producer puts data into the buffer, it wakes up the sleeping consumer. 
 //The solution can be reached by means of inter-process communication, typically using semaphores.
+    int *airplane_id = (int *)cl_id;
+
     while(1){
         srand(time(NULL));
         int num_passengersDropped = rand()%6 + 5; //generate the number of passengers going to taxi platform (5-10)
-        printf("Airplaine %d arrives with %d passengers\n",cl_id, num_passengersDropped);
+        printf("Airplane %d arrives with %d passengers\n",*airplane_id, num_passengersDropped);
 
 //put some mutex shit here
         if(isFull(queue)){
-            printf("Platform is full: Rest of passengers of plane 2 take the bus\n",cl_id);
+            printf("Platform is full: Rest of passengers of plane %d take the bus\n", *airplane_id);
         }
         else {
             for(int p = 0; p < num_passengersDropped; p++){
                 pthread_mutex_lock(&mutex);
-                int passenger_id = (1*ONE_ID_POS) + (cl_id*Z_ID_POS) + (p*Y_ID_POS);
-                printf("Passenger %d of airplane %d arrives to platform\n",passenger_id, cl_id);
+                int passenger_id = (1*ONE_ID_POS) + (*airplane_id*Z_ID_POS) + (p*Y_ID_POS);
+                printf("Passenger %d of airplane %d arrives to platform\n",passenger_id, *airplane_id);
                 enqueue(queue, passenger_id);
                 pthread_mutex_unlock(&mutex);
             }   
@@ -144,15 +146,17 @@ void *FnTaxi(void* pr_id){
 
 //The problem is to make sure that the producer won't try to add data into the buffer if it's full and that the consumer won't try to remove data from an empty buffer
 // next time the consumer removes an item from the buffer, it notifies the producer, who starts to fill the buffer again. 
-    printf("Taxi driver %d arrives\n",pr_id);
+    int *taxi_id = (int *)pr_id;
+
+    printf("Taxi driver %d arrives\n",*taxi_id);
 
     if(isEmpty(queue)){
-        printf("Taxi driver %d waits for passengers to enter the platform\n",pr_id);
+        printf("Taxi driver %d waits for passengers to enter the platform\n",*taxi_id);
     }
     else{
         pthread_mutex_lock(&mutex);
         int passenger_boarding = dequeue(queue);
-        printf("Taxi driver %d picked up client %d from the platform\n",pr_id, passenger_boarding);
+        printf("Taxi driver %d picked up client %d from the platform\n",*taxi_id, passenger_boarding);
         pthread_mutex_unlock(&mutex);
     }
     
@@ -183,7 +187,7 @@ int main(int argc, char *argv[]){
 
   sem_init(&fillCount, 0, BUFFER_SIZE);
   sem_init(&emptyCount, 0, 0);
-  pthread_mutex_init(&mutex);
+  pthread_mutex_init(&mutex,NULL);
 
   pthread_t airplaneThread[num_airplanes];
   pthread_t taxiThread[num_taxis];
