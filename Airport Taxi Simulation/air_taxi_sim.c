@@ -20,6 +20,9 @@
 #include <semaphore.h>
 
 int BUFFER_SIZE = 100; //size of queue
+pthread_mutex_t mutex; //shared semaphore
+sem_t fillCount; //producer semaphore
+sem_t emptyCount; //consumer semapore
 
 // A structure to represent a queue
 struct Queue{
@@ -100,21 +103,29 @@ void print(struct Queue* queue){
 struct Queue* queue;
 
 /*Producer Function: Simulates an Airplane arriving and dumping 5-10 passengers to the taxi platform */
-void *FnAirplane(void* cl_id)
-{
+void *FnAirplane(void* cl_id){
 
     //TO-DO: implement this
+//The producer's job is to generate data, put it into the buffer, and start again
 
-
+//producer: either go to sleep or discard data if the buffer is full.
+// The next time the producer puts data into the buffer, it wakes up the sleeping consumer. 
+//The solution can be reached by means of inter-process communication, typically using semaphores.
+    
+   
 
 }
 
 /* Consumer Function: simulates a taxi that takes n time to take a passenger home and come back to the airport */
-void *FnTaxi(void* pr_id)
+void *FnTaxi(void* pr_id){
 
   //TO-DO: implement this
+// consumer is consuming the data (i.e., removing it from the buffer), one piece at a time
 
-{
+
+//The problem is to make sure that the producer won't try to add data into the buffer if it's full and that the consumer won't try to remove data from an empty buffer
+// next time the consumer removes an item from the buffer, it notifies the producer, who starts to fill the buffer again. 
+
 }
 
 int main(int argc, char *argv[])
@@ -135,13 +146,34 @@ int main(int argc, char *argv[])
   
   //declare arrays of threads and initialize semaphore(s)
 
+  sem_init(&fillCount, 0, BUFFER_SIZE);
+  sem_init(&emptyCount, 0, 0);
+  pthread_mutex_init(&mutex);
+
+  pthread_t airplaneThread[num_airplanes];
+  pthread_t taxiThread[num_taxis];
+  
+
   //create arrays of integer pointers to ids for taxi / airplane threads
-  int *taxi_ids[num_taxis];
   int *airplane_ids[num_airplanes];
-    
+  int *taxi_ids[num_taxis]; 
+  
+  
   //create threads for airplanes
 
+   for(int i=0; i< num_airplanes; i++){
+       // start the thread
+    pthread_create(&airplaneThread[i], NULL, FnAirplane,&i);
+
+   }
+
   //create threads for taxis
+
+    for(int j=0; j< num_taxis; j++){
+        // start the thread
+     pthread_create(&taxiThread[j], NULL, FnTaxi,&j);
+
+    }
   
   pthread_exit(NULL);
 }
