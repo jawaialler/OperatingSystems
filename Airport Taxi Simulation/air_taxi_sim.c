@@ -107,34 +107,31 @@ struct Queue* queue;
 /*Producer Function: Simulates an Airplane arriving and dumping 5-10 passengers to the taxi platform */
 void *FnAirplane(void* cl_id){
 
-int airplane_id = (intptr_t)cl_id;
-int t;
-    while(t<10){ 
-      
-        srand(time(NULL));
+    int airplane_id = (intptr_t)cl_id;
+    int t;
+    while(t<10){ //continuously loop until time limit
         int num_passengersDropped = rand()%6 + 5; //generate the number of passengers going to taxi platform (5-10)
         printf("Airplane %d arrives with %d passengers\n",airplane_id, num_passengersDropped);
-
-//put some mutex shit here
-        if(isFull(queue)){
-            printf("Platform is full: Rest of passengers of plane %d take the bus\n", airplane_id);
-        }
-      //  else {
-            sem_wait(&emptyCount);
-            pthread_mutex_lock(&mutex);
-            printf("IN PASSENGER");
-            for(int p = 0; p < num_passengersDropped; p++){
-
-                int passenger_id = (1*ONE_ID_POS) + (airplane_id*Z_ID_POS) + (p*Y_ID_POS);
+        //produce item
+        for(int p = 0; p < num_passengersDropped; p++){
+            int passenger_id = (1*ONE_ID_POS) + (airplane_id*Z_ID_POS) + (p*Y_ID_POS);
+            if(isFull(queue)){
+                printf("Platform is full: Rest of passengers of plane %d take the bus\n", airplane_id);
+                break; //stop producing items if the queue is full
+            }
+            //else { //enter critical section
+                sem_wait(&emptyCount); //down empty semaphore
+                pthread_mutex_lock(&mutex); //down buffer mutex
+           
                 printf("Passenger %d of airplane %d arrives to platform\n",passenger_id, airplane_id);
-                enqueue(queue, passenger_id);
-             
-            } 
-		    sem_post(&fillCount);  
-       // }
-    pthread_mutex_unlock(&mutex);
-    sleep(1); //sleep thread for 1 second = 1 hour
-	t++;
+                enqueue(queue, passenger_id); //put item into buffer
+                
+                pthread_mutex_unlock(&mutex);//up buffer mutex
+                sem_post(&fillCount); //up fill semaphore
+            //}   
+        }    
+        sleep(1); //sleep thread for 1 second = 1 hour
+	    t++; //increase time
     }
 }
 
@@ -142,78 +139,69 @@ int t;
 void *FnTaxi(void* pr_id){
 
 int taxi_id = (intptr_t)pr_id;
-int y;
-    while(y<12){
+
+    while(1){
         printf("Taxi driver %d arrives\n",taxi_id);
 
         if(isEmpty(queue)){
             printf("Taxi driver %d waits for passengers to enter the platform\n",taxi_id);
         } 
-
-        sem_wait(&fillCount);
-        printf("IN TAXI");
-        pthread_mutex_lock(&mutex);
-        printf("IN DEQUUEU");
-        int passenger_boarding = dequeue(queue);
+        //enter critical section (no need for else statement as the semaphores will prevent it from continuously looping when planes are done arriving)
+        sem_wait(&fillCount); //down fill semaphore
+        pthread_mutex_lock(&mutex); //down buffer mutex
+        
+        int passenger_boarding = dequeue(queue); //remove item from buffer
         printf("Taxi driver %d picked up client %d from the platform\n",taxi_id, passenger_boarding);  
-        sem_post(&emptyCount);
+    
+        pthread_mutex_unlock(&mutex); //up buffer mutex
+        sem_post(&emptyCount); //up empty semaphore
         
-        
-        srand(time(NULL));
-        int tripTime = (rand()%21 + 10)/60; //generate the time the taxi takes to drop someone (10min-30min = 0.167 hours to 0.5 hours = 0.167 seconds to 0.5 seconds )
-        pthread_mutex_unlock(&mutex);
-        usleep(tripTime);
-        y++;
+        int tripTime = (rand()%350000) + (10000000/60); //generate the time the taxi takes to drop someone (10min-30min = 0.167 hours to 0.5 hours = 0.167 seconds to 0.5 seconds )
+        printf("%d \n",tripTime);
+        usleep(tripTime); //sleep for simulated trip time
+       
     }
 }
 
 
 
-
 int main(int argc, char *argv[]){
 
-  int num_airplanes;
-  int num_taxis;
+    int num_airplanes;
+    int num_taxis;
 
-  num_airplanes=atoi(argv[1]);
-  num_taxis=atoi(argv[2]);
-  
-  printf("You entered: %d airplanes per hour\n",num_airplanes);
-  printf("You entered: %d taxis\n", num_taxis);
-  
-  
-  //initialize queue
-  queue = createQueue(BUFFER_SIZE);
-  
-  //declare arrays of threads and initialize semaphore(s)
+    num_airplanes=atoi(argv[1]);
+    num_taxis=atoi(argv[2]);
+    
+    printf("You entered: %d airplanes per hour\n",num_airplanes);
+    printf("You entered: %d taxis\n", num_taxis);
+    
+    //initialize queue
+    queue = createQueue(BUFFER_SIZE);
+    
+    //declare arrays of threads and initialize semaphore(s)
+    sem_init(&fillCount, 0, 0);
+    sem_init(&emptyCount, 0, BUFFER_SIZE);
+    pthread_mutex_init(&mutex,NULL);
 
-  sem_init(&fillCount, 0, BUFFER_SIZE);
-  sem_init(&emptyCount, 0, 0);
-  pthread_mutex_init(&mutex,NULL);
+    pthread_t airplaneThread[num_airplanes];
+    pthread_t taxiThread[num_taxis];
+    
+    //create arrays of integer pointers to ids for taxi / airplane threads
+    int *airplane_ids[num_airplanes];
+    int *taxi_ids[num_taxis]; 
 
-  pthread_t airplaneThread[num_airplanes];
-  pthread_t taxiThread[num_taxis];
-  
+    //create threads for airplanes
+    for(int i=0; i< num_airplanes; i++){
+        // start a new thread for every airplane required
+        pthread_create(&airplaneThread[i], NULL, FnAirplane, (void*)(intptr_t)i);
+        printf("Creating airplane thread %d\n",i);
+    }
 
-  //create arrays of integer pointers to ids for taxi / airplane threads
-  int *airplane_ids[num_airplanes];
-  int *taxi_ids[num_taxis]; 
-
-  
-  //create threads for airplanes
-
-   for(int i=0; i< num_airplanes; i++){
-airplane_ids[i] = &i;
-       // start a new thread for every airplane required
-    pthread_create(&airplaneThread[i], NULL, FnAirplane, (void*)(intptr_t)i);
-    printf("Creating airplane thread %d\n",i);
-   }
-
-  //create threads for taxis
+    //create threads for taxis
     for(int j=0; j< num_taxis; j++){
-taxi_ids[j] = &j; 
         // start a new thread for every taxi required
-     pthread_create(&taxiThread[j], NULL, FnTaxi,(void*)(intptr_t)j);
+        pthread_create(&taxiThread[j], NULL, FnTaxi,(void*)(intptr_t)j);
     }
   
   pthread_exit(NULL);
