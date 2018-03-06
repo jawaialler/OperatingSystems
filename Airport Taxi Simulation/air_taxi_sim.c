@@ -109,7 +109,8 @@ void *FnAirplane(void* cl_id){
 
     int airplane_id = (intptr_t)cl_id;
     int t;
-    while(t<10){ //continuously loop until time limit
+    //while(t<10){ //continuously loop until time limit
+    while(1){
         int num_passengersDropped = rand()%6 + 5; //generate the number of passengers going to taxi platform (5-10)
         printf("Airplane %d arrives with %d passengers\n",airplane_id, num_passengersDropped);
         //produce item
@@ -131,7 +132,7 @@ void *FnAirplane(void* cl_id){
             //}   
         }    
         sleep(1); //sleep thread for 1 second = 1 hour
-	    t++; //increase time
+	    //t++; //increase time
     }
 }
 
@@ -156,8 +157,7 @@ int taxi_id = (intptr_t)pr_id;
         pthread_mutex_unlock(&mutex); //up buffer mutex
         sem_post(&emptyCount); //up empty semaphore
         
-        int tripTime = (rand()%350000) + (10000000/60); //generate the time the taxi takes to drop someone (10min-30min = 0.167 hours to 0.5 hours = 0.167 seconds to 0.5 seconds )
-        printf("%d \n",tripTime);
+        int tripTime = (rand()%(20000000/60)) + (10000000/60); //generate the time the taxi takes to drop someone (10min-30min = 10/60 hours to 30/60 hours => 10 000 000/60 seconds to 30 000 000/60 useconds)
         usleep(tripTime); //sleep for simulated trip time
        
     }
