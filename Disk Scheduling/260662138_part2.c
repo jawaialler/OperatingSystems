@@ -60,16 +60,19 @@ void accessFCFS(int *request, int numRequest)
 void accessSSTF(int *request, int numRequest)
 {
     int currentPosition = START;
-    int *closest;
+    //int *closest;
+    //closest = &request[0];
 
     for (int i=0; i<numRequest; i++){
-        for (int j=i; j<numRequest; j++){
-            if (abs(currentPosition - request[j]) < abs(currentPosition - &closest)){ //if distance from current to request[j] is smaller than the current smallest distance 
-                closest = request[j]; //update current closest
-            }
-            currentPosition = &closest; //update new current position with the smallest distance found, so as to compare rest of array according to that position
-            swap(closest,request[i]); //update array         
+        int *closest;
+        closest = &request[i];
+        for (int j=i+1; j<numRequest; j++){
+            if (abs(request[j] - currentPosition) <= abs(*closest - currentPosition)){ //if distance from current to request[j] is smaller than the current smallest distance 
+                closest = &request[j]; //update current closest
+            }        
         }
+        swap(closest,&request[i]); //update array 
+        currentPosition = request[i]; //update new current position with the smallest distance found, so as to compare rest of array according to that position
     }
 
     printf("\n----------------\n");
@@ -83,8 +86,24 @@ void accessSSTF(int *request, int numRequest)
 void accessSCAN(int *request, int numRequest){
     
     int currentPosition = START;
-    int *smaller,*bigger,nbSmaller,nbBigger,*merged,nbMerged;
+    int nbSmaller,nbBigger,nbMerged;
     nbMerged = 0;
+    nbSmaller = 0;
+    nbBigger = 0;
+
+    for(int i=0;i<numRequest;i++){
+        if(request[i] < currentPosition){
+            nbSmaller++;
+        } else 
+            nbBigger++;
+    }
+
+    int *bigger = malloc(nbBigger * sizeof(int));
+    int *smaller = malloc(nbSmaller * sizeof(int));
+    int *merge = malloc(numRequest * sizeof(int));
+
+    nbSmaller = 0;
+    nbBigger = 0;
 
     //seperate the input array into 2
     for(int i=0;i<numRequest;i++){
@@ -99,8 +118,8 @@ void accessSCAN(int *request, int numRequest){
     }
 
     if(currentPosition < HIGH/2 ){ //if we begin in the lower part of the disk, go down the disk
-        qsort(smaller,nbSmaller, sizeOf(int), cmpfuncdecrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncincrease);
+        qsort(smaller,nbSmaller, sizeof(int), cmpfuncdecrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncincrease);
         //merge into new array, and put in the first track in between
         for(int i=0;i<nbSmaller;i++){
             merge[nbMerged] = smaller[i];
@@ -116,8 +135,8 @@ void accessSCAN(int *request, int numRequest){
          }
     }
     else if(currentPosition >= HIGH/2){ //if we begin in the higher part of the disk, go up the disk
-        qsort(smaller, nbSmaller, sizeOf(int), cmpfuncincrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncdecrease);
+        qsort(smaller, nbSmaller, sizeof(int), cmpfuncincrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncdecrease);
         //merge into new array, and put in the last track in between
         for(int i=0;i<nbBigger;i++){
            merge[nbMerged] = bigger[i];
@@ -137,16 +156,36 @@ void accessSCAN(int *request, int numRequest){
     printf("SCAN :");
     printSeqNPerformance(merge, nbMerged);
     printf("----------------\n");
+
+    free(smaller);
+    free(bigger);
+    free(merge);
+
     return;
 }
 
 //access the disk location in CSCAN
 void accessCSCAN(int *request, int numRequest)
 {
-    
     int currentPosition = START;
-    int *smaller,*bigger,nbSmaller,nbBigger,*merged,nbMerged;
+    int nbSmaller,nbBigger,nbMerged;
     nbMerged = 0;
+    nbSmaller = 0;
+    nbBigger = 0;
+
+    for(int i=0;i<numRequest;i++){
+        if(request[i] < currentPosition){
+            nbSmaller++;
+        } else 
+            nbBigger++;
+    }
+
+    int *bigger = malloc(nbBigger * sizeof(int));
+    int *smaller = malloc(nbSmaller * sizeof(int));
+    int *merge = malloc(numRequest * sizeof(int));
+
+    nbSmaller = 0;
+    nbBigger = 0;
 
     //seperate the input array into 2
     for(int i=0;i<numRequest;i++){
@@ -161,8 +200,8 @@ void accessCSCAN(int *request, int numRequest)
     }
 
     if(currentPosition < HIGH/2 ){ //if we begin in the lower part of the disk, go down the disk
-        qsort(smaller,nbSmaller, sizeOf(int), cmpfuncdecrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncdecrease);
+        qsort(smaller,nbSmaller, sizeof(int), cmpfuncdecrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncdecrease);
         //merge into new array, and put in the first and last tracks in between
         for(int i=0;i<nbSmaller;i++){
             merge[nbMerged] = smaller[i];
@@ -180,8 +219,8 @@ void accessCSCAN(int *request, int numRequest)
          }
     }
     else if(currentPosition >= HIGH/2){ //if we begin in the higher part of the disk, go up the disk
-        qsort(smaller, nbSmaller, sizeOf(int), cmpfuncincrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncincrease);
+        qsort(smaller, nbSmaller, sizeof(int), cmpfuncincrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncincrease);
         //merge into new array, and put in the last and first tracks in between
         for(int i=0;i<nbBigger;i++){
            merge[nbMerged] = bigger[i];
@@ -203,14 +242,35 @@ void accessCSCAN(int *request, int numRequest)
     printf("CSCAN :");
     printSeqNPerformance(merge, nbMerged);
     printf("----------------\n");
+    
+    free(smaller);
+    free(bigger);
+    free(merge);
+
     return;
 }
 
 //access the disk location in LOOK
 void accessLOOK(int *request, int numRequest){
     int currentPosition = START;
-    int *smaller,*bigger,nbSmaller,nbBigger,*merged,nbMerged;
+    int nbSmaller,nbBigger,nbMerged;
     nbMerged = 0;
+    nbSmaller = 0;
+    nbBigger = 0;
+
+    for(int i=0;i<numRequest;i++){
+        if(request[i] < currentPosition){
+            nbSmaller++;
+        } else 
+            nbBigger++;
+    }
+
+    int *bigger = malloc(nbBigger * sizeof(int));
+    int *smaller = malloc(nbSmaller * sizeof(int));
+    int *merge = malloc(numRequest * sizeof(int));
+
+    nbSmaller = 0;
+    nbBigger = 0;
 
     //seperate the input array into 2
     for(int i=0;i<numRequest;i++){
@@ -225,8 +285,8 @@ void accessLOOK(int *request, int numRequest){
     }
 
     if(currentPosition < HIGH/2 ){ //if we begin in the lower part of the disk, go down the disk
-        qsort(smaller,nbSmaller, sizeOf(int), cmpfuncdecrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncincrease);
+        qsort(smaller,nbSmaller, sizeof(int), cmpfuncdecrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncincrease);
         //merge into new array
         for(int i=0;i<nbSmaller;i++){
             merge[nbMerged] = smaller[i];
@@ -238,8 +298,8 @@ void accessLOOK(int *request, int numRequest){
         }
     }
     else if(currentPosition >= HIGH/2){ //if we begin in the higher part of the disk, go up the disk
-        qsort(smaller, nbSmaller, sizeOf(int), cmpfuncincrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncdecrease);
+        qsort(smaller, nbSmaller, sizeof(int), cmpfuncincrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncdecrease);
         //merge into new array, and put in the last track in between
         for(int i=0;i<nbBigger;i++){
            merge[nbMerged] = bigger[i];
@@ -255,14 +315,35 @@ void accessLOOK(int *request, int numRequest){
     printf("LOOK :");
     printSeqNPerformance(merge, nbMerged);
     printf("----------------\n");
+
+    free(smaller);
+    free(bigger);
+    free(merge);
+
     return;
 }
 
 //access the disk location in CLOOK
 void accessCLOOK(int *request, int numRequest){
     int currentPosition = START;
-    int *smaller,*bigger,nbSmaller,nbBigger,*merged,nbMerged;
+    int nbSmaller,nbBigger,nbMerged;
     nbMerged = 0;
+    nbSmaller = 0;
+    nbBigger = 0;
+
+    for(int i=0;i<numRequest;i++){
+        if(request[i] < currentPosition){
+            nbSmaller++;
+        } else 
+            nbBigger++;
+    }
+
+    int *bigger = malloc(nbBigger * sizeof(int));
+    int *smaller = malloc(nbSmaller * sizeof(int));
+    int *merge = malloc(numRequest * sizeof(int));
+
+    nbSmaller = 0;
+    nbBigger = 0;
 
     //seperate the input array into 2
     for(int i=0;i<numRequest;i++){
@@ -275,10 +356,9 @@ void accessCLOOK(int *request, int numRequest){
             nbBigger++;
         } 
     }
-
     if(currentPosition < HIGH/2 ){ //if we begin in the lower part of the disk, go down the disk
-        qsort(smaller,nbSmaller, sizeOf(int), cmpfuncdecrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncdecrease);
+        qsort(smaller,nbSmaller, sizeof(int), cmpfuncdecrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncdecrease);
         //merge into new array
         for(int i=0;i<nbSmaller;i++){
             merge[nbMerged] = smaller[i];
@@ -290,8 +370,8 @@ void accessCLOOK(int *request, int numRequest){
         }
     }
     else if(currentPosition >= HIGH/2){ //if we begin in the higher part of the disk, go up the disk
-        qsort(smaller, nbSmaller, sizeOf(int), cmpfuncincrease);
-        qsort(bigger,nbBigger,sizeOf(int), cmpfuncincrease);
+        qsort(smaller, nbSmaller, sizeof(int), cmpfuncincrease);
+        qsort(bigger,nbBigger,sizeof(int), cmpfuncincrease);
         //merge into new array, and put in the last track in between
         for(int i=0;i<nbBigger;i++){
            merge[nbMerged] = bigger[i];
@@ -307,6 +387,11 @@ void accessCLOOK(int *request, int numRequest){
     printf("CLOOK :");
     printSeqNPerformance(merge,nbMerged);
     printf("----------------\n");
+
+    free(smaller);
+    free(bigger);
+    free(merge);
+
     return;
 }
 
