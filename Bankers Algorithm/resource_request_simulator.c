@@ -1,47 +1,47 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//declare variables
+int *avail, *max, *hold, *need;
+int i_nbProcess, j_nbResource;
+
+//mutex lock
+pthread_mutex_t mutex;
+
 /*
 Implementation of isSafe() as described in the slides
 */
 int isSafe(){
 
-    int isSafe = 0;
-
-    //Work temp vectors
-    //Finish temp vectors
-
-    int finish[P] = {0};
-
-    int work[P] = {0};
-
+    int *finish = malloc(i_nbProcess * sizeof(int));
+    int *work = malloc(num_resources * sizeof(int));
 
     //Step 1: initialize
-    for(int j;j< ???;j++){
-        Work[j] = Avail[j];
-        Finish[i] = false
+    for(int i=0; i<i_nbProcess; i++){
+        finish[i] = 0;
+    }
+    for(int j=0; j<j_nbResource; j++){
+        work[j] = avail[j];
     }
 
-    //Step 2: find a process Pi such that
-
-    if (Finish[i] = false AND Need[i][j] <= Work[j]){
-        //Step 4: 
-        for(all i){
-            if (Finish[i] = false){
-                isSafe = false;
+    for(int i=0; i<i_nbProcess; i++){
+        for(int j=0; j<j_nbResource; j++){
+            //Step 2: find a process Pi such that 
+            if (finish[i] == 0 && need[i][j] <= work[j]){
+                //Step 3:
+                work[j] = work[j] + hold[i][j];
+                finish[i] = 1;
             }
-            break;
         }
     }
-    else{
-        //Step 3:
-        Work[j] = Work[j] + Hold[i][j];
-        Finish[i] = true;
-    }
+    //Step 4: 
+    for(int i=0; i<j_nbResource; i++){
+        if (finish[j] == 0){
+            return false;
+        }
+    }    
 
-
-
-    return isSafe;
+    return true;
 
 }
 /*
@@ -53,19 +53,19 @@ int bankers_algorithm(int pr_id, int* request_vector){
     //everytime a process Pi posts a request in REQ[j]
 
     //Step 1: verify that a process matches its needs
-    if REQ[j] > Need[i][j] { //abort
+    if request_vector[j] > Need[i][j] { //abort
         break;
     }
 
     //Step 2: check if the requested amount if available
-    if  REQ[j] > Avail[j] {
+    if  request_vector[j] > Avail[j] {
         break;
     }
 
     //Step 3: provisional allocation
-    Avail[j] = Avail[j] - REQ[j];
-    Hold[i][j] = Hold[i][j] + REQ[j];
-    Need[i][j] = Need[i][j] - REQ[j];
+    Avail[j] = Avail[j] - request_vector[j];
+    Hold[i][j] = Hold[i][j] + request_vector[j];
+    Need[i][j] = Need[i][j] - request_vector[j];
 
     return isSafe();
 
@@ -106,6 +106,53 @@ int main()
 {
 
     //Initialize all inputs to banker's algorithm
+
+    //get number of processes
+    printf("Enter number of processes:/n");
+    scanf("%d",&i_nbProcess);
+
+    //get nb of distinct resources
+    printf("Enter number of resources:/n");
+    scanf("%d",&j_nbResource);
+
+    //allocate memory for each array
+    avail = malloc(nbResources * sizeof(int));
+    
+    //max = malloc(i_nbProcess* j_nbResource * sizeof(int));
+    max = malloc(i_nbProcess* sizeof(int));
+    for( int j=0; j < m; j++){
+        max[i] = malloc(j_nbResource * sizeof(int));
+    }
+
+    //hold = malloc(i_nbProcess* j_nbResource * sizeof(int));
+    hold = malloc(i_nbProcess* sizeof(int));
+    for( int j=0; j < m; j++){
+        hold[i] = malloc(j_nbResource * sizeof(int));
+    }
+    
+    //need = malloc(i_nbProcess* j_nbResource * sizeof(int));
+    need = malloc(i_nbProcess* sizeof(int));
+    for( int j=0; j < m; j++){
+        need[i] = malloc(j_nbResource * sizeof(int));
+    }
+
+    //get amount of each resource
+    printf("Enter amount of each resource:/n");
+    for(int j = 0; j<j_nbResource;j++){
+        printf("For resource %d:",j);
+        scanf("%d",&avail[j]);
+    }
+
+    //get max resource claim per process/resource
+    printf("Enter the max number of resource claim per process: /n");
+    for(int i = 0; i<i_nbProcess;i++){
+        for(int j = 0; j<j_nbResource;i++){
+            printf("Max number of resource %d for process %d: ",j,i); 
+            scanf("%d",&max[i][j]);
+            hold[i][j] = 0;
+            need[i][j] = max[i][j] - hold[i][j];
+        }
+    }
 
     //create threads simulating processes (process_simulator)
 
