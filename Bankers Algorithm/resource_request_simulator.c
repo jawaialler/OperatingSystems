@@ -105,6 +105,9 @@ void request_simulator(int pr_id, int* request_vector){
 int main()
 {
 
+    //init the mutex and semaphores
+    pthread_mutex_init(&mutex,NULL);
+
     //Initialize all inputs to banker's algorithm
 
     //get number of processes
@@ -155,10 +158,25 @@ int main()
     }
 
     //create threads simulating processes (process_simulator)
+    pthread_t processThreads[i_nbProcess];
+    for(int i=0; i<i_nbProcess;i++){
+        pthread_create(&processThreads[i], NULL, process_simulator,(void*)(intptr_t)i);
+    }
 
-    // create a thread that takes away resources from the available pool (fault_simulator)
+    //create a thread that takes away resources from the available pool (fault_simulator)
+    pthread_t faultThread;
+    pthread_create(&faultThread, NULL, fault_simulator,(void*)(intptr_t)i);
+    
 
     //create a thread to check for deadlock (deadlock_checker)
+    pthread_t deadlockThread;
+    pthread_create(&deadlockThread, NULL, process_simulator,(void*)(intptr_t)i);
+    
 
+    free(max);
+    free(hold);
+    free(avail);
+    free(need);
+    pthread_exit(NULL);
     return 0;
 }
