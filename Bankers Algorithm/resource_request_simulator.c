@@ -55,27 +55,47 @@ Implementation of Bankers Algorithm as described in the slides
 returns 1 if safe allocation 0 if not safe
 */
 int bankers_algorithm(int pr_id, int* request_vector){
-
+    int process_id = (intptr_t)pr_id;
     //everytime a process Pi posts a request in REQ[j]
 
     //Step 1: verify that a process matches its needs
-    if request_vector[j] > need[i][j] { //abort
-        break;
+    for (int j=0; j<j_nbResource;j++){
+        if (request_vector[j] > need[process_id][j]) { //abort
+            return 0;
+        }   
     }
 
     //Step 2: check if the requested amount if available
-    if  request_vector[j] > avail[j] {
-        break;
+    for(int j=0; j<j_nbResource;j++){
+        if (request_vector[j] > avail[j]) {
+            return 0;
+        }
     }
 
     //Step 3: provisional allocation
-    avail[j] = avail[j] - request_vector[j];
-    hold[i][j] = hold[i][j] + request_vector[j];
-    need[i][j] = need[i][j] - request_vector[j];
+    for(int j=0; j<j_nbResource;j++){
+        avail[j] = avail[j] - request_vector[j];
+        hold[process_id][j] = hold[process_id][j] + request_vector[j];
+        need[process_id][j] = need[process_id][j] - request_vector[j];
+    }
 
     return isSafe();
 
 }
+
+/*
+Checks if processes are completed.
+*/
+int processComplete(void* pr_id){
+    int process_id = (intptr_t)pr_id;
+    for (int j=0;j<j_nbResource;j++){
+        if(need[process_id][j] > 0){
+            return 0;
+        }
+    }
+    return 1;
+}
+
 
 /*
 Simulates processes running on the system.
@@ -83,7 +103,7 @@ Simulates processes running on the system.
 void* process_simulator(void* pr_id){
     int process_id = (intptr_t)pr_id;
 
-    while(1){
+    while(processComplete(process_id) == 0){ //until the process is done, keep trying to allocate
         //generate random resource request vector
         int *requestvector = malloc(j_nbResource * sizeof(int));
 
@@ -108,15 +128,27 @@ void* process_simulator(void* pr_id){
 
         if (bankers_algorithm(process_id, requestvector)){
             //only gets resources if allocation is safe
+            pthread_mutex_unlock(&mutex); //unlock
             printf("System is safe: allocating");
-            sleep(3);
+            sleep(3); //sleep, do noting else since bankers already allocated
         }
         else{
             printf("Allocation is not safe: cancelling"); 
+            //remove allocation that bankers did
+            for(int j=0; j<j_nbResource;j++){
+                avail[j] = avail[j] + request_vector[j];
+                hold[process_id][j] = hold[process_id][j] - request_vector[j];
+                need[process_id][j] = need[process_id][j] + request_vector[j];
+            }
+            pthread_mutex_unlock(&mutex); //unlock
+            sleep(1);
         }
-
-        pthread_mutex_unlock(&mutex); //unlock
-        //releases resources if it gets its needs met
+    }
+    //releases resources if it gets its needs met
+    for(int j=0; j<j_nbResource;j++){
+        avail[j] = avail[j] + hold[process_id][j];
+        hold[process_id][j] = 0;
+        //need is not needed anymore, so just dont touch
     }
 }
 
