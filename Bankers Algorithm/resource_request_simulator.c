@@ -79,7 +79,20 @@ int bankers_algorithm(int pr_id, int* request_vector){
         need[process_id][j] = need[process_id][j] - request_vector[j];
     }
 
-    return isSafe();
+    if (isSafe()){
+        printf("System is safe: allocating");
+        return 1;
+    }
+    else{
+        //remove allocation
+        printf("Allocation is not safe: cancelling");
+        for(int j=0; j<j_nbResource;j++){
+            avail[j] = avail[j] + request_vector[j];
+            hold[process_id][j] = hold[process_id][j] - request_vector[j];
+            need[process_id][j] = need[process_id][j] + request_vector[j];
+        }
+        return 0;
+    }
 
 }
 
@@ -125,31 +138,24 @@ void* process_simulator(void* pr_id){
         //entering critical section so lock
 
         pthread_mutex_lock(&mutex); //lock
-
-        if (bankers_algorithm(process_id, requestvector)){
-            //only gets resources if allocation is safe
-            pthread_mutex_unlock(&mutex); //unlock
-            printf("System is safe: allocating");
-            sleep(3); //sleep, do noting else since bankers already allocated
+        int safe = bankers_algorithm(process_id, requestvector);
+        pthread_mutex_unlock(&mutex); //unlock
+        if(safe){
+            sleep(3); //sleep to simulate process running
         }
         else{
-            printf("Allocation is not safe: cancelling"); 
-            //remove allocation that bankers did
-            for(int j=0; j<j_nbResource;j++){
-                avail[j] = avail[j] + request_vector[j];
-                hold[process_id][j] = hold[process_id][j] - request_vector[j];
-                need[process_id][j] = need[process_id][j] + request_vector[j];
-            }
-            pthread_mutex_unlock(&mutex); //unlock
             sleep(1);
         }
     }
+
+    pthread_mutex_lock(&mutex);
     //releases resources if it gets its needs met
     for(int j=0; j<j_nbResource;j++){
         avail[j] = avail[j] + hold[process_id][j];
         hold[process_id][j] = 0;
         //need is not needed anymore, so just dont touch
     }
+    pthread_mutex_unlock(&mutex);
 }
 
 /*
