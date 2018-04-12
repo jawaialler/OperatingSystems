@@ -67,7 +67,7 @@ void accessSSTF(int *request, int numRequest)
         int *closest;
         closest = &request[i];
         for (int j=i+1; j<numRequest; j++){
-            if (abs(request[j] - currentPosition) <= abs(*closest - currentPosition)){ //if distance from current to request[j] is smaller than the current smallest distance 
+            if (abs(request[j] - currentPosition) < abs(*closest - currentPosition)){ //if distance from current to request[j] is smaller than the current smallest distance 
                 closest = &request[j]; //update current closest
             }        
         }
