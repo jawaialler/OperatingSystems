@@ -95,12 +95,24 @@ int bankers_algorithm(int pr_id, int* request_vector){
 }
 
 /*
-Checks if processes are completed.
+Checks if processes are completed. Returns 0 if not complete, 1 if complete
 */
 int processComplete(int process){
     for (int j=0;j<j_nbResource;j++){
-        if(need[process][j] > 0){
+        if(need[process][j] > 0){ //if at least one need is not 0
             return 0;
+        }
+    }
+    return 1;
+}
+
+/*
+Checks if all processes are completed. Returns 0 if some are still running, 1 if all are complete
+*/
+int allComplete(){
+    for (int i=0;i<i_nbProcess;i++){
+        if(processComplete(i) == 0){ //if at least one is not complete
+            return 0; 
         }
     }
     return 1;
@@ -168,19 +180,22 @@ void* process_simulator(void* pr_id){
         hold[process_id][j] = 0;
         //need is not needed anymore, so just dont touch
     }
-    pthread_mutex_unlock(&mutex);
+
     printf("Process %d has finished \n",process_id);
+    if (allComplete()){
+        exit(0);
+    }
+
+    pthread_mutex_unlock(&mutex);
 }
 
 /*
 Simulates a fault occuring on the system.
 */
-void* fault_simulator(void* pr_id){
-    int fault_id = (intptr_t)pr_id;
+void* fault_simulator(){
     while(1){
         //thread running in bg removing resources with probablility describe in spec
         sleep(10);
-
         //50% chance of creating a fault in only one of the resources
         if (rand()%2 == 1){
             //resource selected randomly
@@ -191,6 +206,9 @@ void* fault_simulator(void* pr_id){
             avail[chosenResource]--;
             pthread_mutex_unlock(&mutex); //unlock
         }
+        else{
+            printf("No faults to declare yet \n");
+        }
     }
 }
 
@@ -200,7 +218,6 @@ Checks for deadlock
 void* deadlock_checker(){ //run periodically
     while(1){
         //simple checking if deadlock has occured due to resource fault
-
         sleep(10);
         int nbBlocked = 0;
         printf("Checking for deadlock \n");
@@ -208,17 +225,16 @@ void* deadlock_checker(){ //run periodically
         //check if process needs > avail resources for all processes
         for(int i=0;i<i_nbProcess;i++){
             for(int j=0;j<j_nbResource;j++){
-                if(needs[i][j] > avail[j]){
+                if(need[i][j] > avail[j]){
                     nbBlocked++;
                     break;
                 }
             }
         }
         pthread_mutex_unlock(&mutex); //unlock
-        //if no process can aquire all resources it needs to complete, then deadlock
 
-        //if deadlock, exit and print:
-        if(nbBlocked == i_nbProcess){ //no process can aquire all needed resources
+        //check deadlock if no process can aquire all needed resources
+        if(nbBlocked == i_nbProcess){
             printf("Deadlock will occur as processes request more resources, exiting...\n");
             exit(0);
         }
@@ -293,11 +309,11 @@ int main()
 
     //create a thread that takes away resources from the available pool (fault_simulator)
     pthread_t faultThread;
-    pthread_create(&faultThread, NULL, fault_simulator,(void*)(intptr_t)i_nbProcess+1);
+    pthread_create(&faultThread, NULL, fault_simulator,NULL);
     
     //create a thread to check for deadlock (deadlock_checker)
     pthread_t deadlockThread;
-    pthread_create(&deadlockThread, NULL, process_simulator,(void*)(intptr_t)i_nbProcess+2);
+    pthread_create(&deadlockThread, NULL, deadlock_checker,NULL);
     
     pthread_exit(NULL);
 
