@@ -80,12 +80,10 @@ int bankers_algorithm(int pr_id, int* request_vector){
     }
 
     if (isSafe()){
-        printf("System is safe: allocating \n");
         return 1;
     }
     else{
         //remove allocation
-        printf("Allocation is not safe: cancelling \n");
         for(int j=0; j<j_nbResource;j++){
             avail[j] = avail[j] + request_vector[j];
             hold[process_id][j] = hold[process_id][j] - request_vector[j];
@@ -115,7 +113,7 @@ Simulates processes running on the system.
 void* process_simulator(void* pr_id){
     int process_id = (intptr_t)pr_id;
 
-    while(processComplete(process_id) == 0){ //until the process is done, keep trying to allocate
+    while(processComplete(process_id) != 1){ //until the process is done, keep trying to allocate
         //generate random resource request vector
         int *requestvector = malloc(j_nbResource * sizeof(int));
 
@@ -123,7 +121,7 @@ void* process_simulator(void* pr_id){
 
         for ( int j=0;j<j_nbResource;j++){
             if(need[process_id][j] != 0){
-                requestvector[j] = rand() % need[process_id][j] + 1;
+                requestvector[j] = (rand() % need[process_id][j]) + 1;
             }
             else{
                 requestvector[j] = 0;
@@ -145,18 +143,21 @@ void* process_simulator(void* pr_id){
         pthread_mutex_unlock(&mutex); //unlock
         
         while(safe != 1){//busy waiting on bankers until allocation is safe
+            printf("Allocation for process %d is not safe: cancelling \n", process_id);
             sleep(1);
             pthread_mutex_lock(&mutex); //lock
             safe = bankers_algorithm(process_id, requestvector);
             pthread_mutex_unlock(&mutex); //unlock
         }
 
+        printf("System is safe: allocating to process %d \n", process_id);
+
         //if safe, grant the resources
         printf("The resource vector ");
         for(int j=0;j<j_nbResource;j++){
             printf("%d ",requestvector[j]);
         }
-        printf("for process %d is granted \n",process_id,);
+        printf("for process %d is granted \n",process_id);
         sleep(3); //sleep to simulate process running
     }
 
@@ -193,6 +194,15 @@ void* deadlock_checker(){ //run periodically
     }
 }
 
+void freeArray(int **a, int m) {
+    int i;
+    for (i = 0; i < m; ++i) {
+        free(a[i]);
+    }
+    free(a);
+}
+
+
 int main()
 {
 
@@ -200,6 +210,7 @@ int main()
     pthread_mutex_init(&mutex,NULL);
 
     //Initialize all inputs to banker's algorithm
+    srand(time(NULL));
 
     //get number of processes
     printf("Enter number of processes:");
@@ -263,10 +274,6 @@ int main()
     pthread_create(&deadlockThread, NULL, process_simulator,(void*)(intptr_t)i_nbProcess+2);
  */   
     //free the memory
-    free(max);
-    free(hold);
-    free(avail);
-    free(need);
     pthread_exit(NULL);
 
     return 0;
