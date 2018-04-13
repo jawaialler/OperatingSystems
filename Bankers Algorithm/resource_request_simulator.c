@@ -172,36 +172,6 @@ void* process_simulator(void* pr_id){
     printf("Process %d has finished \n",process_id);
 }
 
-/*
-Simulates a fault occuring on the system.
-*/
-void* fault_simulator(void* pr_id){
-    int fault_id = (intptr_t)pr_id;
-    printf("Simulating fault \n");
-    while(1){
-        //thread running in bg removing resources with probablility describe in spec
-    }
-}
-
-/*
-Checks for deadlock
-*/
-void* deadlock_checker(){ //run periodically
-    while(1){
-        //simple checking if deadlock has occured due to resource fault
-
-        sleep(5);
-    }
-}
-
-void freeArray(int **a, int m) {
-    int i;
-    for (i = 0; i < m; ++i) {
-        free(a[i]);
-    }
-    free(a);
-}
-
 
 int main()
 {
@@ -264,16 +234,7 @@ int main()
     for(int i=0; i<i_nbProcess;i++){
         pthread_create(&processThreads[i], NULL, process_simulator,(void*)(intptr_t)i);
     }
-/*
-    //create a thread that takes away resources from the available pool (fault_simulator)
-    pthread_t faultThread;
-    pthread_create(&faultThread, NULL, fault_simulator,(void*)(intptr_t)i_nbProcess+1);
-    
-    //create a thread to check for deadlock (deadlock_checker)
-    pthread_t deadlockThread;
-    pthread_create(&deadlockThread, NULL, process_simulator,(void*)(intptr_t)i_nbProcess+2);
- */   
-    //free the memory
+  
     pthread_exit(NULL);
 
     return 0;
