@@ -364,9 +364,13 @@ void accessCLOOK(int *request, int numRequest){
             merge[nbMerged] = smaller[i];
             nbMerged++;
         }
-        for(int i=0;i<nbBigger;i++){
-            merge[nbMerged] = bigger[i];
+        if(nbBigger != 0){//ensures we don't write the first track if there are no more elements
+            merge[nbMerged] = HIGH; //insert last track, since CLook goes directly to the last track
             nbMerged++;
+            for(int i=0;i<nbBigger;i++){
+                merge[nbMerged] = bigger[i];
+                nbMerged++;
+            }
         }
     }
     else if(currentPosition >= HIGH/2){ //if we begin in the higher part of the disk, go up the disk
@@ -377,9 +381,13 @@ void accessCLOOK(int *request, int numRequest){
            merge[nbMerged] = bigger[i];
            nbMerged++;
         }
-        for(int i=0;i<nbSmaller;i++){
-            merge[nbMerged] = smaller[i];
+        if(nbSmaller != 0){//ensures we don't write the first track if there are no more elements
+            merge[nbMerged] = LOW; //insert first track, then increment
             nbMerged++;
+            for(int i=0;i<nbSmaller;i++){
+                merge[nbMerged] = smaller[i];
+                nbMerged++;
+            }
         }
     }
 
