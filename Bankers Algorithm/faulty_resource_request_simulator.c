@@ -17,8 +17,6 @@ Implementation of isSafe() as described in the slides
 */
 int isSafe(){
 
-    printf("Checking if allocation is safe...\n");
-
     int *finish = malloc(i_nbProcess * sizeof(int));
     int *work = malloc(j_nbResource * sizeof(int));
 
@@ -151,12 +149,15 @@ void* process_simulator(void* pr_id){
         //entering critical section so lock
 
         pthread_mutex_lock(&mutex); //lock
+        printf("Checking if allocation is safe...\n");
         int safe = bankers_algorithm(process_id, requestvector);
-        pthread_mutex_unlock(&mutex); //unlock
-        
-        while(safe != 1){//busy waiting on bankers until allocation is safe
+        if(safe !=1){ //so it only prints once rather than everytime
             printf("Allocation for process %d is not safe: cancelling \n", process_id);
-            sleep(1);
+        }
+        pthread_mutex_unlock(&mutex); //unlock
+
+        while(safe != 1){//busy waiting on bankers until allocation is safe
+            //sleep(1);
             pthread_mutex_lock(&mutex); //lock
             safe = bankers_algorithm(process_id, requestvector);
             pthread_mutex_unlock(&mutex); //unlock
@@ -199,11 +200,13 @@ void* fault_simulator(){
         //50% chance of creating a fault in only one of the resources
         if (rand()%2 == 1){
             //resource selected randomly
-            int chosenResource = (rand() % j_nbResource) + 1;
+            int chosenResource = (rand() % j_nbResource);
             printf("Simulating fault on resource %d \n",chosenResource);
             //decrease chosen resource's avail by 1
             pthread_mutex_lock(&mutex); //lock
-            avail[chosenResource]--;
+            if (avail[chosenResource] >0){
+                avail[chosenResource]--;
+            }
             pthread_mutex_unlock(&mutex); //unlock
         }
         else{

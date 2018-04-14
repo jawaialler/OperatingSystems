@@ -17,8 +17,6 @@ Implementation of isSafe() as described in the slides
 */
 int isSafe(){
 
-    printf("Checking if allocation is safe...\n");
-
     int *finish = malloc(i_nbProcess * sizeof(int));
     int *work = malloc(j_nbResource * sizeof(int));
 
@@ -139,12 +137,16 @@ void* process_simulator(void* pr_id){
         //entering critical section so lock
 
         pthread_mutex_lock(&mutex); //lock
+        printf("Checking if allocation is safe...\n");
         int safe = bankers_algorithm(process_id, requestvector);
+        if(safe !=1){ //so it only prints once rather than everytime
+            printf("Allocation for process %d is not safe: cancelling \n", process_id);
+        }
         pthread_mutex_unlock(&mutex); //unlock
+
         
         while(safe != 1){//busy waiting on bankers until allocation is safe
-            printf("Allocation for process %d is not safe: cancelling \n", process_id);
-            sleep(1);
+            //sleep(1);
             pthread_mutex_lock(&mutex); //lock
             safe = bankers_algorithm(process_id, requestvector);
             pthread_mutex_unlock(&mutex); //unlock
